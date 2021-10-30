@@ -7,7 +7,7 @@ from glob import glob
 
 
 def track_images(img_dir):
-    tracker = Tracker(model='yolox-s', ckpt='weights/yolox_s.pth.tar',filter_class=['truck','person','car'])
+    tracker = Tracker(model='yolox-s', ckpt='weights/best_ckpt.pth', filter_class=['truck','person','car'])
     imgs = glob(os.path.join(img_dir,'*.png')) + glob(os.path.join(img_dir,'*.jpg')) + glob(os.path.join(img_dir,'*.jpeg'))
     for path in imgs:
         im = cv2.imread(path)
@@ -45,7 +45,7 @@ def track_cap(file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("YOLOX-Tracker Demo!")
-    parser.add_argument('-p', "--path", type=str, help="choose a video")
+    parser.add_argument('-p', "--path", type=str, default="/home/ericdoug_qi/competitions/kaggle/helmet-2021/datas/test/57906_000718_Endzone.mp4", help="choose a video")
     args = parser.parse_args()
 
     if os.path.isfile(args.path):

@@ -23,7 +23,7 @@ class DeepSort(object):
         metric = NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
         self.tracker = Tracker(metric, max_iou_distance=max_iou_distance, max_age=max_age, n_init=n_init)
 
-    def update(self, bbox_xywh, confidences, ori_img):
+    def update(self, bbox_xywh, confidences, classes, ori_img):
         self.height, self.width = ori_img.shape[:2]
 
         # generate detections
@@ -34,12 +34,13 @@ class DeepSort(object):
         # run on non-maximum supression
         boxes = np.array([d.tlwh for d in detections])
         scores = np.array([d.confidence for d in detections])
+        # todo
         indices = non_max_suppression(boxes, self.nms_max_overlap, scores)
         detections = [detections[i] for i in indices]
 
         # update tracker
         self.tracker.predict()
-        self.tracker.update(detections)
+        self.tracker.update(detections, classes)
 
         # output bbox identities
         outputs = []
@@ -49,7 +50,8 @@ class DeepSort(object):
             box = track.to_tlwh()
             x1,y1,x2,y2 = self._tlwh_to_xyxy(box)
             track_id = track.track_id
-            outputs.append(np.array([x1,y1,x2,y2,track_id], dtype=np.int))
+            class_id = track.class_id
+            outputs.append(np.array([x1,y1,x2,y2,track_id, class_id], dtype=np.int))
         if len(outputs) > 0:
             outputs = np.stack(outputs,axis=0)
         return outputs

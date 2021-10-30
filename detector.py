@@ -39,7 +39,7 @@ class Detector():
 
     def detect(self, raw_img, visual=True, conf=0.5):
         info = {}
-        img, ratio = preproc(raw_img, self.test_size, COCO_MEAN, COCO_STD)
+        img, ratio = preproc(raw_img, self.test_size)
         info['raw_img'] = raw_img
         info['img'] = img
 
@@ -67,7 +67,13 @@ class Detector():
 
 
 if __name__=='__main__':
-    detector = Detector()
-    img = cv2.imread('dog.jpg')
-    img_,out = detector.detect(img)
+    img_file = "/home/ericdoug_qi/competitions/kaggle/helmet-2021/datas/images/57823_003138_Sideline_frame120.jpg"
+    detector = Detector(ckpt='weights/best_ckpt.pth')
+    img = cv2.imread(img_file)
+    out = detector.detect(img)
     print(out)
+
+    # 打印图片
+    import matplotlib.pyplot as plt
+    plt.imshow(out['visual'])
+    plt.show()

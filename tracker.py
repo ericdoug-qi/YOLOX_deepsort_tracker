@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(0, './YOLOX')
-from YOLOX.yolox.data.datasets.coco_classes import COCO_CLASSES
+# from YOLOX.yolox.data.datasets.coco_classes import COCO_CLASSES
+from YOLOX.yolox.data.datasets.voc_classes import VOC_CLASSES
 from detector import Detector
 from deep_sort.utils.parser import get_config
 from deep_sort.deep_sort import DeepSort
@@ -9,10 +10,10 @@ import cv2
 from utils.visualize import vis_track
 
 
-class_names = COCO_CLASSES
+class_names = VOC_CLASSES
 
 class Tracker():
-    def __init__(self, filter_class=None, model='yolox-s', ckpt='yolox_s.pth.tar', ):
+    def __init__(self, filter_class=None, model='yolox-s', ckpt='weights/best_ckpt.pth'):
         self.detector = Detector(model, ckpt)
         cfg = get_config()
         cfg.merge_from_file("deep_sort/configs/deep_sort.yaml")
@@ -29,14 +30,16 @@ class Tracker():
         if info['box_nums']>0:
             bbox_xywh = []
             scores = []
+            clss = []
             #bbox_xywh = torch.zeros((info['box_nums'], 4))
-            for (x1, y1, x2, y2), class_id, score  in zip(info['boxes'],info['class_ids'],info['scores']):
+            for (x1, y1, x2, y2), class_id, score in zip(info['boxes'],info['class_ids'],info['scores']):
                 if self.filter_class and class_names[int(class_id)] not in self.filter_class:
                     continue
                 bbox_xywh.append([int((x1+x2)/2), int((y1+y2)/2), x2-x1, y2-y1])
                 scores.append(score)
+                clss.append(class_id)
             bbox_xywh = torch.Tensor(bbox_xywh)
-            outputs = self.deepsort.update(bbox_xywh, scores, image)
+            outputs = self.deepsort.update(bbox_xywh, scores, clss, image)
             image = vis_track(image, outputs)
 
         return image, outputs

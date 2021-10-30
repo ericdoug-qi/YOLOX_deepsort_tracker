@@ -63,14 +63,16 @@ class Track:
 
     """
 
-    def __init__(self, mean, covariance, track_id, n_init, max_age,
+    def __init__(self, mean, covariance, track_id, class_id, n_init, max_age,
                  feature=None):
         self.mean = mean
         self.covariance = covariance
         self.track_id = track_id
+        self.class_id = class_id
         self.hits = 1
         self.age = 1
         self.time_since_update = 0
+        self.bbox = [0, 0, 0, 0]
 
         self.state = TrackState.Tentative
         self.features = []
@@ -109,6 +111,17 @@ class Track:
         ret[2:] = ret[:2] + ret[2:]
         return ret
 
+    def get_yolo_pred(self):
+        """Get yolo prediction`.
+
+        Returns
+        -------
+        ndarray
+            The yolo bounding box.
+
+        """
+        return self.bbox.tlwh
+
     def predict(self, kf):
         """Propagate the state distribution to the current time step using a
         Kalman filter prediction step.
@@ -123,7 +136,24 @@ class Track:
         self.age += 1
         self.time_since_update += 1
 
-    def update(self, kf, detection):
+    def increment_age(self):
+        self.age += 1
+        self.time_since_update += 1
+
+    def predict(self, kf):
+        """Propagate the state distribution to the current time step using a
+        Kalman filter prediction step.
+
+        Parameters
+        ----------
+        kf : kalman_filter.KalmanFilter
+            The Kalman filter.
+
+        """
+        self.mean, self.covariance = kf.predict(self.mean, self.covariance)
+        self.increment_age()
+
+    def update(self, kf, detection, class_id):
         """Perform Kalman filter measurement update step and update the feature
         cache.
 
@@ -135,9 +165,11 @@ class Track:
             The associated detection.
 
         """
+        self.bbox = detection
         self.mean, self.covariance = kf.update(
             self.mean, self.covariance, detection.to_xyah())
         self.features.append(detection.feature)
+        self.class_id = class_id
 
         self.hits += 1
         self.time_since_update = 0
